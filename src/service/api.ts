@@ -4,7 +4,7 @@ let refreshRequest: Promise<string> | null = null
 
 async function refreshAccessToken() {
   if (!refreshRequest) {
-    refreshRequest = fetch(`${API_BASE_URL}/auth/refresh`, {
+    refreshRequest = fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -45,7 +45,7 @@ export async function apiRequest<T = unknown>(
     },
   })
 
-  if (response.status === 401 && allowRefresh && path !== '/auth/refresh') {
+  if (response.status === 401 && allowRefresh && path !== '/auth/refresh-token') {
     try {
       await refreshAccessToken()
       return apiRequest<T>(path, options, false)

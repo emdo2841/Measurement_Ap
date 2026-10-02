@@ -16,6 +16,7 @@ type MeasurementField = {
 
 type MeasurementFormProps = {
   clients: ClientOption[]
+  defaultClientId?: string
   onCreated: () => Promise<void> | void
   onCancel: () => void
 }
@@ -32,10 +33,11 @@ function newField(label = ''): MeasurementField {
 
 export default function MeasurementForm({
   clients,
+  defaultClientId = '',
   onCreated,
   onCancel,
 }: MeasurementFormProps) {
-  const [clientId, setClientId] = useState('')
+  const [clientId, setClientId] = useState(defaultClientId)
   const [title, setTitle] = useState('')
   const [unit, setUnit] = useState<'CM' | 'INCHES'>('INCHES')
   const [fields, setFields] = useState<MeasurementField[]>(
@@ -130,7 +132,7 @@ export default function MeasurementForm({
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Example: Current body measurement"
+            placeholder="Example: Blouse, Trouser or Agbada"
             className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             required
           />

@@ -31,6 +31,10 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
 
   const loadProfile = useCallback(async () => {
     try {
@@ -83,6 +87,32 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
     }
   }
 
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (newPassword !== confirmPassword) {
+      showToast('The new passwords do not match.', 'error')
+      return
+    }
+
+    try {
+      setChangingPassword(true)
+      setError('')
+      await apiRequest('/users/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      showToast('Password changed. Please sign in again.', 'success')
+      onLogout()
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Unable to change your password.'
+      setError(message)
+      showToast(message, 'error')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   if (loading) return <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6"><p>Loading profile...</p></main>
 
   return (
@@ -111,6 +141,21 @@ export default function SettingsPage({ onLogout }: SettingsPageProps) {
         </div>
 
         <div className="mt-7 flex justify-end"><button type="submit" disabled={saving} className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60">{saving ? 'Saving...' : 'Save changes'}</button></div>
+      </form>
+
+      <form onSubmit={changePassword} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Change password</h2>
+          <p className="mt-1 text-sm text-slate-500">Enter your current password before choosing a new one. Google-only accounts do not need a password.</p>
+        </div>
+        <div className="mt-6 grid gap-5">
+          <label className="text-sm font-medium text-slate-700">Current password<input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required /></label>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="text-sm font-medium text-slate-700">New password<input type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required /></label>
+            <label className="text-sm font-medium text-slate-700">Confirm new password<input type="password" autoComplete="new-password" minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required /></label>
+          </div>
+        </div>
+        <div className="mt-7 flex justify-end"><button type="submit" disabled={changingPassword} className="rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-60">{changingPassword ? 'Changing...' : 'Change password'}</button></div>
       </form>
 
       <NotificationSettings />

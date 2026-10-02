@@ -129,6 +129,7 @@ function AuthPanel({ onAuthenticated }: AuthPanelProps) {
     password: string
     name?: string
     phone?: string
+    registrationToken?: string
   }) => {
     setIsSubmitting(true)
     setError('')
@@ -154,6 +155,7 @@ function AuthPanel({ onAuthenticated }: AuthPanelProps) {
       formData.append('email', payload.email)
       formData.append('password', payload.password)
       formData.append('phone', payload.phone || '')
+      formData.append('registrationToken', payload.registrationToken || '')
 
       const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
@@ -163,12 +165,34 @@ function AuthPanel({ onAuthenticated }: AuthPanelProps) {
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(getErrorMessage(data, 'Account creation failed.'))
       setMode('login')
-      setError('Account created successfully. Please sign in.')
+      setError(getErrorMessage(data, 'Account created successfully. Please sign in.'))
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Something went wrong.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const requestRegistrationCode = async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/registration/request-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(getErrorMessage(data, 'Unable to send verification code.'))
+  }
+
+  const verifyRegistrationCode = async (email: string, code: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/registration/verify-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(getErrorMessage(data, 'Unable to verify code.'))
+    if (typeof data.registrationToken !== 'string') throw new Error('The server did not return a registration token.')
+    return data.registrationToken
   }
 
   if (mode === 'login') {
@@ -191,6 +215,8 @@ function AuthPanel({ onAuthenticated }: AuthPanelProps) {
       isSubmitting={isSubmitting}
       error={error}
       googleButtonRef={googleButtonRef}
+      onRequestRegistrationCode={requestRegistrationCode}
+      onVerifyRegistrationCode={verifyRegistrationCode}
     />
   )
 }

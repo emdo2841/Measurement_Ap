@@ -8,6 +8,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import ClientsPage from './pages/ClientsPage'
 import ClientDetailsPage from './pages/ClientDetailsPage'
 import OrdersPage from './pages/OrdersPage'
+import ClientMeasurementsPage from './pages/ClientMeasurementsPage'
 import OrderDetailsPage from './pages/OrderDetailsPage'
 import MeasurementsPage from './pages/MeasurementsPage'
 import MeasurementDetailsPage from './pages/MeasurementDetailsPage'
@@ -47,6 +48,7 @@ function App() {
         <Route path="/orders" element={<OrdersPage onLogout={handleLogout} />} />
         <Route path="/orders/:id" element={<OrderDetailsPage onLogout={handleLogout} />} />
         <Route path="/measurements" element={<MeasurementsPage onLogout={handleLogout} />} />
+        <Route path="/measurements/client/:clientId" element={<ClientMeasurementsPage onLogout={handleLogout} />} />
         <Route
   path="/measurements/:id"
   element={

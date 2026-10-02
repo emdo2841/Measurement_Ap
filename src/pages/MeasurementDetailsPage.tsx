@@ -451,7 +451,7 @@ export default function MeasurementDetailsPage({ onLogout }: Props) {
 
     try {
       await apiRequest(`/measurement/${id}`, { method: 'DELETE' })
-      navigate('/measurements', { replace: true })
+       navigate(`/measurements/client/${measurement?.clientId ?? ''}`, { replace: true })
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -497,11 +497,11 @@ export default function MeasurementDetailsPage({ onLogout }: Props) {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link
-              to="/measurements"
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-            >
-              ← Measurements
-            </Link>
+              to={`/measurements/client/${measurement.clientId}`}
+               className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+             >
+              ← {measurement.client?.name ?? 'Client'} measurements
+             </Link>
 
             <h1 className="mt-2 text-3xl font-black text-slate-900">
               {isEditing ? 'Edit measurement' : measurement.title}

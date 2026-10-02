@@ -6,11 +6,13 @@ type AuthMode = 'login' | 'signup'
 type AuthFormsProps = {
   mode: AuthMode
   onModeChange: (mode: AuthMode) => void
-  onSubmit: (payload: { email: string; password: string; name?: string; phone?: string }) => Promise<void>
+  onSubmit: (payload: { email: string; password: string; name?: string; phone?: string; registrationToken?: string }) => Promise<void>
   isSubmitting: boolean
   error?: string
   googleButtonRef: RefObject<HTMLDivElement | null>
   onForgotPassword?: (email: string) => Promise<void> | void
+  onRequestRegistrationCode?: (email: string) => Promise<void>
+  onVerifyRegistrationCode?: (email: string, code: string) => Promise<string>
 }
 
 export function LoginForm({
@@ -235,6 +237,123 @@ export function LoginForm({
 }
 
 export function SignupForm({
+  onModeChange,
+  onSubmit,
+  isSubmitting,
+  error,
+  googleButtonRef,
+  onRequestRegistrationCode,
+  onVerifyRegistrationCode,
+}: Omit<AuthFormsProps, 'mode'>) {
+  const [step, setStep] = useState<'email' | 'code' | 'details'>('email')
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [registrationToken, setRegistrationToken] = useState('')
+  const [message, setMessage] = useState('')
+  const [working, setWorking] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  async function sendCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!onRequestRegistrationCode) return
+    try {
+      setWorking(true); setMessage('')
+      await onRequestRegistrationCode(email)
+      setStep('code')
+      setMessage('We sent a six-digit code to your email. It expires in 10 minutes.')
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Could not send verification code.')
+    } finally { setWorking(false) }
+  }
+
+  async function verifyCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!onVerifyRegistrationCode) return
+    try {
+      setWorking(true); setMessage('')
+      const token = await onVerifyRegistrationCode(email, code)
+      setRegistrationToken(token)
+      setStep('details')
+      setMessage('Email verified. Complete your account details.')
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Could not verify code.')
+    } finally { setWorking(false) }
+  }
+
+  async function resendCode() {
+    if (!onRequestRegistrationCode) return
+    try {
+      setWorking(true); setMessage('')
+      await onRequestRegistrationCode(email)
+      setMessage('A new verification code was sent.')
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Could not resend verification code.')
+    } finally { setWorking(false) }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#e8e1db]">
+      <div className="mx-auto flex min-h-screen max-w-375 items-stretch bg-[#f4f3f2]">
+        <div className="relative hidden w-[70%] overflow-hidden lg:block">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/login%20and%20reg.jpg')" }} />
+          <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/15 to-black/10" />
+          <div className="absolute inset-x-0 bottom-0 z-10 p-8 text-white xl:p-10">
+            <h1 className="text-4xl font-black tracking-[-0.06em] xl:text-5xl">Craft Your Vision</h1>
+            <h2 className="mt-3 text-3xl font-black tracking-tighter xl:text-4xl">TailorPro: Measure, Create, Deliver</h2>
+            <p className="mt-4 text-white/85">Create your account to begin managing orders.</p>
+          </div>
+        </div>
+
+        <div className="flex w-full items-center justify-center bg-[#f5f3f2] px-4 py-6 lg:w-[30%]">
+          <div className="w-full max-w-80">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="text-[17px] font-bold text-slate-900">TailorPro</div>
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-700">Create</div>
+            </div>
+            <h3 className="text-[24px] font-black tracking-tighter text-slate-900">
+              {step === 'email' ? 'Verify Your Email' : step === 'code' ? 'Enter Verification Code' : 'Complete Your Account'}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              {step === 'email' ? 'Start by entering the email you want to use.' : step === 'code' ? `Enter the code sent to ${email}.` : `Verified email: ${email}`}
+            </p>
+
+            {step === 'email' && <form onSubmit={sendCode} className="mt-5 space-y-3">
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required />
+              <button disabled={working} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">{working ? 'Sending...' : 'Send verification code'}</button>
+            </form>}
+
+            {step === 'code' && <form onSubmit={verifyCode} className="mt-5 space-y-3">
+              <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} placeholder="000000" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.35em] outline-none focus:border-blue-500" required />
+              <button disabled={working || code.length !== 6} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">{working ? 'Checking...' : 'Verify code'}</button>
+              <div className="flex justify-between text-xs"><button type="button" onClick={() => { setStep('email'); setCode(''); setMessage('') }} className="text-slate-600">Change email</button><button type="button" disabled={working} onClick={() => void resendCode()} className="font-semibold text-blue-600">Resend code</button></div>
+            </form>}
+
+            {step === 'details' && <form className="mt-5 space-y-3" onSubmit={async (event) => {
+              event.preventDefault()
+              const data = new FormData(event.currentTarget)
+              await onSubmit({ email, registrationToken, name: String(data.get('name') ?? ''), phone: String(data.get('phone') ?? ''), password: String(data.get('password') ?? '') })
+            }}>
+              <input name="name" placeholder="Full name" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3" required />
+              <input name="phone" type="tel" placeholder="Phone number" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3" required />
+              <div className="flex rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <input name="password" type={showPassword ? 'text' : 'password'} minLength={8} placeholder="Create password" className="min-w-0 flex-1 outline-none" required />
+                <button type="button" onClick={() => setShowPassword((value) => !value)} className="text-xs font-semibold text-blue-600">{showPassword ? 'Hide' : 'Show'}</button>
+              </div>
+              <button disabled={isSubmitting} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">{isSubmitting ? 'Creating...' : 'Create account'}</button>
+            </form>}
+
+            {(message || error) && <p className={`mt-3 text-xs ${error ? 'text-red-600' : 'text-slate-600'}`}>{error || message}</p>}
+            <div className="my-4 flex items-center gap-3"><div className="h-px flex-1 bg-slate-200" /><span className="text-xs text-slate-400">or</span><div className="h-px flex-1 bg-slate-200" /></div>
+            <div ref={googleButtonRef} className="flex min-h-10 justify-center" />
+            <div className="mt-3 text-center text-xs text-slate-600">Already have an account? <button type="button" onClick={() => onModeChange('login')} className="font-semibold text-blue-600">Sign in</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function LegacySignupForm({
   onModeChange,
   onSubmit,
   isSubmitting,

@@ -11,7 +11,7 @@ type Order = { id: string; status: string; dueDate?: string | null; totalAmount?
 type Measurement = { id: string; title: string; unit: string; data: Record<string, number> }
 type ClientDetails = Client & {
     orders?: Order[]
-    measurement?: Measurement | null
+    measurements?: Measurement[]
 }
 type Props = { onLogout: () => void }
 
@@ -64,55 +64,53 @@ export default function ClientDetailsPage({ onLogout }: Props) {
                 <section className="grid gap-6 lg:grid-cols-2">
                     <div className="rounded-2xl bg-white p-6 shadow-sm">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold">Measurement profile</h2>
-
-                            {client.measurement ? (
-                                <Link
-                                    to={`/measurements/${client.measurement.id}`}
-                                    className="rounded-xl border border-blue-600 px-4 py-2 text-blue-600"
-                                >
-                                    View measurement
-                                </Link>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => setModal('measurement')}
-                                    className="rounded-xl border border-blue-600 px-4 py-2 text-blue-600"
-                                >
-                                    Add measurement
-                                </button>
-                            )}
-                        </div>
-
-                        {client.measurement ? (
-                            <Link
-                                to={`/measurements/${client.measurement.id}`}
-                                className="mt-4 block rounded-xl border border-slate-200 p-4 hover:bg-slate-50"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <strong>{client.measurement.title}</strong>
-
-                                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                        {client.measurement.unit}
-                                    </span>
-                                </div>
-
-                                <p className="mt-2 text-sm text-slate-500">
-                                    {Object.keys(client.measurement.data ?? {}).length} measurement fields
-                                </p>
+                            <div>
+                                <h2 className="text-lg font-bold">Measurements</h2>
+                                <p className="text-sm text-slate-500">One profile for each garment type.</p>
+                            </div>
+                             <Link to={`/measurements/client/${client.id}`}
+                               className="rounded-xl border border-blue-600 px-4 py-2 text-blue-600"
+                             >
+                            
+                               View all
                             </Link>
-                        ) : (
-                            <p className="mt-4 text-sm text-slate-500">
-                                This client does not have a measurement profile yet.
-                            </p>
-                        )}
-                    </div>
+                        </div>
+                        {client.measurements?.length ? (
+                           <div className="mt-4 space-y-3">
+                               {client.measurements.slice(0, 4).map((measurement) => (
+                                   <Link
+                                       key={measurement.id}
+                                       to={`/measurements/${measurement.id}`}
+                                       className="block rounded-xl border border-slate-200 p-4 hover:bg-slate-50"
+                                   >
+                                       <div className="flex items-center justify-between gap-3">
+                                           <strong>{measurement.title}</strong>
+                                           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                               {measurement.unit}
+                                           </span>
+                                       </div>
+                                       <p className="mt-2 text-sm text-slate-500">
+                                           {Object.keys(measurement.data ?? {}).length} measurement fields
+                                       </p>
+                                   </Link>
+                               ))}
+                           </div>
+                         ) : (
+                             <p className="mt-4 text-sm text-slate-500">
+                                
+                               This client does not have any measurements yet.
+                             </p>
+                         )}
+                     </div>
+                
                 </section>
             </div>
 
             {modal === 'edit' && <Modal title="Edit client" onClose={() => setModal(null)}><ClientForm client={client} onCancel={() => setModal(null)} onSaved={async () => { setModal(null); await loadClient() }} /></Modal>}
             {modal === 'order' && <Modal title="Add order" onClose={() => setModal(null)}><OrderForm clients={[client]} onCancel={() => setModal(null)} onCreated={async () => { setModal(null); await loadClient() }} /></Modal>}
-            {modal === 'measurement' && <Modal title="Add measurement" onClose={() => setModal(null)}><MeasurementForm clients={[client]} onCancel={() => setModal(null)} onCreated={async () => { setModal(null); await loadClient() }} /></Modal>}
-        </main>
-    )
-}
+            {modal === 'measurement' && <Modal title="Add measurement" onClose={() => setModal(null)}><MeasurementForm clients={[client]} defaultClientId={client.id} onCancel={() => setModal(null)} onCreated={async () => { setModal(null); await loadClient() }} /></Modal>}
+         </main>
+     )
+ }
+    
+
