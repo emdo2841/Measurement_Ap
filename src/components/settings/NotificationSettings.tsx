@@ -10,12 +10,38 @@ export default function NotificationSettings() {
   const supported = supportsPushNotifications()
 
   useEffect(() => {
-    async function check() {
-      try { setEnabled(Boolean(await getReminderSubscription())) }
-      finally { setChecking(false) }
+  let active = true
+
+  async function checkSubscription() {
+    try {
+      const subscription =
+        await getReminderSubscription()
+
+      if (active) {
+        setEnabled(Boolean(subscription))
+      }
+    } catch (cause) {
+      if (active) {
+        showToast(
+          cause instanceof Error
+            ? cause.message
+            : 'Unable to check notification settings.',
+          'error',
+        )
+      }
+    } finally {
+      if (active) {
+        setChecking(false)
+      }
     }
-    void check()
-  }, [])
+  }
+
+  void checkSubscription()
+
+  return () => {
+    active = false
+  }
+}, [showToast])
 
   async function toggleNotifications() {
     try {
