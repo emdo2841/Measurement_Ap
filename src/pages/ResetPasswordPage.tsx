@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
-const API_BASE_URL = 'http://localhost/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api/v1'
 
-function ResetPasswordPage() {
+export default function ResetPasswordPage() {
   const [token, setToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -16,122 +18,60 @@ function ResetPasswordPage() {
     setToken(params.get('token') ?? '')
   }, [])
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     setMessage('')
 
-    if (!token) {
-      setError('Reset token is missing. Please use the link sent to your email.')
-      return
-    }
-
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long.')
-      return
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
+    if (!token) return setError('Reset token is missing. Please use the link sent to your email.')
+    if (newPassword.length < 8) return setError('Password must be at least 8 characters long.')
+    if (newPassword !== confirmPassword) return setError('Passwords do not match.')
 
     setIsSubmitting(true)
-
     try {
       const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),
       })
-
       const data = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(typeof data.error === 'string' ? data.error : 'Unable to reset password.')
-      }
-
+      if (!response.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Unable to reset password.')
       setMessage('Your password was reset successfully. You can now log in.')
       setNewPassword('')
       setConfirmPassword('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to reset password.')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to reset password.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#e8e1db] px-4 py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-[#f5f3f2] p-6 shadow-xl shadow-slate-200/50">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1f6fe9] shadow-lg shadow-blue-200">
-            <svg viewBox="0 0 24 24" className="h-6 w-6 fill-white">
-              <path d="M12 2.5a5 5 0 015 5v1.5A3.5 3.5 0 0113.5 12H10.5A3.5 3.5 0 017 8.5V7.5a5 5 0 015-5Zm-6 9.5h12a2 2 0 012 2v1.5a1 1 0 01-1 1H7a1 1 0 01-1-1V14a2 2 0 012-2Zm8 6a3 3 0 003 3H9a3 3 0 003-3Z" />
-            </svg>
+    <main className="flex min-h-screen items-center justify-center bg-[#f4f2ec] px-4 py-10">
+      <section className="w-full max-w-md rounded-3xl border border-white/80 bg-white/90 p-7 shadow-[0_22px_55px_rgba(45,58,55,0.1)]">
+        <header className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#263d47] text-white shadow-[0_8px_20px_rgba(38,61,71,0.18)]">
+            <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 1 1 8 0v3" /></svg>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">Reset Password</h1>
-          <p className="mt-2 text-sm text-slate-600">Create a new password for your TailorPro account.</p>
-        </div>
+          <h1 className="font-display text-3xl text-[#263d47]">Reset password</h1>
+          <p className="mt-2 text-sm text-[#66736d]">Create a new password for your TailorPro account.</p>
+        </header>
 
         {message ? (
           <div className="space-y-4 text-center">
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {message}
-            </p>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-xl bg-[#1f6fe9] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-lg shadow-blue-200 transition hover:bg-[#195cc6]"
-            >
-              Back to Login
-            </Link>
+            <p className="rounded-xl border border-[#bcd8c8] bg-[#eaf5ee] px-4 py-3 text-sm text-[#397153]">{message}</p>
+            <Link to="/" className="inline-flex rounded-xl bg-[#263d47] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#36515b]">Back to login</Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-700">
-                New Password
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                placeholder="Enter a new password"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-700">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Re-enter your password"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                required
-              />
-            </div>
-
-            {error && <p className="text-xs text-red-600">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-[#1f6fe9] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-lg shadow-blue-200 transition hover:bg-[#195cc6] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? 'Resetting...' : 'Reset Password'}
-            </button>
+            <div className="flex justify-end"><button type="button" onClick={() => setShowPassword((current) => !current)} className="text-xs font-bold text-[#607d6f] hover:text-[#314b43]">{showPassword ? 'Hide passwords' : 'Show passwords'}</button></div>
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[#596861]">New password<input type={showPassword ? 'text' : 'password'} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Enter a new password" className="mt-1.5 w-full rounded-xl border border-[#d8dfda] bg-white px-4 py-3 text-base normal-case tracking-normal text-[#263d47] outline-none focus:border-[#82998d] focus:ring-4 focus:ring-[#778f83]/10" required /></label>
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[#596861]">Confirm password<input type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" className="mt-1.5 w-full rounded-xl border border-[#d8dfda] bg-white px-4 py-3 text-base normal-case tracking-normal text-[#263d47] outline-none focus:border-[#82998d] focus:ring-4 focus:ring-[#778f83]/10" required /></label>
+            {error && <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-[#263d47] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#36515b] disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Resetting…' : 'Reset password'}</button>
           </form>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }
-
-export default ResetPasswordPage

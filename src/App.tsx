@@ -14,7 +14,10 @@ import MeasurementsPage from './pages/MeasurementsPage'
 import MeasurementDetailsPage from './pages/MeasurementDetailsPage'
 import SharedMeasurementPage from './pages/SharedMeasurementPage'
 import SettingsPage from './pages/SettingsPage'
-
+import AcceptableUsePage from './pages/AcceptableUsePage'
+import CookiePolicyPage from './pages/CookiePolicyPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsConditionsPage from './pages/TermsConditionsPage'
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
@@ -40,6 +43,10 @@ function App() {
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthPanel onAuthenticated={() => setIsAuthenticated(true)} />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/shared/measurements/:token" element={<SharedMeasurementPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsConditionsPage />} />
+      <Route path="/cookies" element={<CookiePolicyPage />} />
+      <Route path="/acceptable-use" element={<AcceptableUsePage />} />
 
       <Route element={isAuthenticated ? <AppLayout onLogout={handleLogout} /> : <Navigate to="/" replace />}>
         <Route path="/dashboard" element={<Dashboard onLogout={handleLogout} />} />
@@ -50,15 +57,15 @@ function App() {
         <Route path="/measurements" element={<MeasurementsPage onLogout={handleLogout} />} />
         <Route path="/measurements/client/:clientId" element={<ClientMeasurementsPage onLogout={handleLogout} />} />
         <Route
-  path="/measurements/:id"
-  element={
-    isAuthenticated ? (
-      <MeasurementDetailsPage onLogout={handleLogout} />
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>
+          path="/measurements/:id"
+          element={
+            isAuthenticated ? (
+              <MeasurementDetailsPage onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
         <Route path="/calendar" element={<CalendarPage onLogout={handleLogout} />} />
         <Route path="/settings" element={<SettingsPage onLogout={handleLogout} />} />
       </Route>
